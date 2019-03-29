@@ -6,41 +6,21 @@ import Burger from "../../components/Burger/Burger";
 import BuildControls from "../../components/Burger/BuildControls/BuildControls";
 import Modal from "../../components/UI/Modal/Modal";
 import OrderSummary from "../../components/Burger/OrderSummary/OrderSummary";
-import axios from '../../axios-orders'
 import Spinner from "../../components/UI/Spinner/Spinner";
 import withErrorHandler from "../../hoc/withErrorHandler/withErrorHandler";
-import {ADD_INGREDIENT, REMOVE_INGREDIENT} from "../../store/actions";
+import * as actions from '../../store/actions/index'
+import axios from '../../axios-orders'
 
 
 class BurgerBuilder extends Component {
+
     state = {
         purchasing: false,
-        loading: false,
-        error: false
     };
 
     componentDidMount() {
-        // axios.get('https://lwsoftware-burger.firebaseio.com/ingredients.json')
-        //     .then(response => {
-        //         let ingredients = {...response.data};
-        //         this.setState({
-        //             ingredients: response.data,
-        //             totalPrice: this.recalculateTotalPrice(ingredients)
-        //         })
-        //     })
-        //     .catch(error => {
-        //         this.setState({error: true})
-        //     });
+        this.props.onInitIngredients();
     }
-    //
-    // recalculateTotalPrice(ingredients) {
-    //     const base = 4;
-    //     let ingredientsCost = 0;
-    //     for (let ingredient in ingredients) {
-    //         ingredientsCost += ingredients[ingredient] * INGREDIENT_PRICES[ingredient];
-    //     }
-    //     return base + ingredientsCost;
-    // }
 
     updatePurchaseState(ingredients) {
         const sum = Object.values(ingredients)
@@ -57,6 +37,7 @@ class BurgerBuilder extends Component {
     };
 
     purchaseContinueHandler = () => {
+        this.props.onInitPurchase();
         this.props.history.push('/checkout');
     };
 
@@ -68,7 +49,7 @@ class BurgerBuilder extends Component {
             disabledInfo[key] = disabledInfo[key] <= 0;
         }
         let orderSummary = null;
-        let burger = this.state.error ? <p>Ingredients can't be loaded</p> : <Spinner/>;
+        let burger = this.props.error ? <p>Ingredients can't be loaded</p> : <Spinner/>;
         if (this.props.ings) {
             burger = (<Aux>
                 <Burger ingredients={this.props.ings}/>
@@ -84,9 +65,6 @@ class BurgerBuilder extends Component {
                                          purchaseContinue={this.purchaseContinueHandler}
                                          price={this.props.price}/>;
         }
-        if (this.state.loading) {
-            orderSummary = <Spinner/>
-        }
         return (
             <Aux>
                 <Modal show={this.state.purchasing} modalClosed={this.purchaseCancelHandler}>
@@ -100,16 +78,19 @@ class BurgerBuilder extends Component {
 
 const mapStateToProps = state => {
     return {
-        ings: state.ingredients,
-        price: state.totalPrice
+        ings: state.burgerBuilder.ingredients,
+        price: state.burgerBuilder.totalPrice,
+        error: state.burgerBuilder.error
     };
-}
+};
 
 const mapDispatchToProps = dispatch => {
     return {
-        onIngredientAdded: (ingName) => dispatch({type: ADD_INGREDIENT, ingredientName: ingName}),
-        onIngredientRemoved: (ingName) => dispatch({type: REMOVE_INGREDIENT, ingredientName: ingName})
+        onIngredientAdded: (ingName) => dispatch(actions.addIngredient(ingName)),
+        onIngredientRemoved: (ingName) => dispatch(actions.removeIngredient(ingName)),
+        onInitIngredients: () => dispatch(actions.initIngredients()),
+        onInitPurchase: () => dispatch(actions.purchaseInit())
     }
-}
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(withErrorHandler(BurgerBuilder, axios));
