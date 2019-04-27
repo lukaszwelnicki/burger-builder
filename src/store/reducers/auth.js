@@ -62,6 +62,6 @@ const setAuthRedirectPath = (state, action) => {
         ...state,
         authRedirectPath: action.path
     }
-}
+};
 
 export default reducer;
